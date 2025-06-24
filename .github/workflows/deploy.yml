@@ -24,6 +24,8 @@ jobs:
 
     - name: Deploy to VPS
       run: |
+        echo "USER=${{ secrets.USER }}"
+        echo "HOST=${{ secrets.HOST }}"
         ssh -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.HOST }} "
           rm -rf /web/frontend/*"
         scp -r build/* ${{ secrets.USER }}@${{ secrets.HOST }}:/web/frontend/
