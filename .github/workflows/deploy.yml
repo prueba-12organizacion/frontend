@@ -1,0 +1,33 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: Copy backend files to VPS
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.HOST }} "
+          mkdir -p /web/backend &&
+          rm -rf /web/backend/*"
+        scp -r * ${{ secrets.USER }}@${{ secrets.HOST }}:/web/backend/
+
+    - name: Restart backend with PM2
+      run: |
+        ssh ${{ secrets.USER }}@${{ secrets.HOST }} "
+          cd /web/backend &&
+          source venv/bin/activate &&
+          pm2 delete backend || true &&
+          pm2 start 'uvicorn main:app --host 0.0.0.0 --port 8000' --name backend --interpreter=python3"
