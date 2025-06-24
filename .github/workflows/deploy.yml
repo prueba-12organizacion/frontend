@@ -1,4 +1,4 @@
-name: Deploy Backend
+name: Deploy Frontend
 
 on:
   push:
@@ -17,17 +17,13 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: Copy backend files to VPS
+    - name: Install dependencies and build
+      run: |
+        npm ci
+        npm run build
+
+    - name: Deploy to VPS
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.HOST }} "
-          mkdir -p /web/backend &&
-          rm -rf /web/backend/*"
-        scp -r * ${{ secrets.USER }}@${{ secrets.HOST }}:/web/backend/
-
-    - name: Restart backend with PM2
-      run: |
-        ssh ${{ secrets.USER }}@${{ secrets.HOST }} "
-          cd /web/backend &&
-          source venv/bin/activate &&
-          pm2 delete backend || true &&
-          pm2 start 'uvicorn main:app --host 0.0.0.0 --port 8000' --name backend --interpreter=python3"
+          rm -rf /web/frontend/*"
+        scp -r build/* ${{ secrets.USER }}@${{ secrets.HOST }}:/web/frontend/
